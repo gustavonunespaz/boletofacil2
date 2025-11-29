@@ -4,6 +4,7 @@ import com.nunespaz.boletofacil2.application.dto.PdfExtractionData;
 import com.nunespaz.boletofacil2.application.dto.PdfGenerationRequest;
 import com.nunespaz.boletofacil2.application.port.PdfService;
 import com.nunespaz.boletofacil2.domain.valueobject.Endereco;
+import java.awt.Color;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -176,8 +177,8 @@ public class PdfBoxPdfService implements PdfService {
             try (PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
                 areaAlvo = areaAlvo.ajustarParaRotacao(page.getRotation(), page.getMediaBox());
 
-                contentStream.setStrokingColor(1, 1, 1);
-                contentStream.setNonStrokingColor(1, 1, 1);
+                contentStream.setStrokingColor(Color.WHITE);
+                contentStream.setNonStrokingColor(Color.WHITE);
                 contentStream.addRect(areaAlvo.x0, areaAlvo.y0, areaAlvo.largura(), areaAlvo.altura());
                 contentStream.fill();
             }
