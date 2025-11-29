@@ -137,7 +137,7 @@ public class PdfBoxPdfService implements PdfService {
 
             PDPage primeiraPagina = original.getPage(0);
             primeiraPagina.setRotation(180);
-            limparAreaDeEndereco(original, primeiraPagina);
+            limparAreaDeEndereco(original);
 
             PDPage paginaEndereco = new PDPage(PDRectangle.A4);
             document.addPage(paginaEndereco);
