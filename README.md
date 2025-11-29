@@ -18,7 +18,6 @@ Abra `landing.html` no navegador para acessar o resumo do projeto. Ajustes visua
 Para executar localmente via navegador com o Maven Wrapper:
 
 1. Na raiz do projeto, rode `./mvnw spring-boot:run`.
-2. Acesse `http://localhost:8080` para abrir o console web que chama os endpoints REST.
-3. Use o formulário para informar o caminho absoluto do PDF a ser processado ou recarregue a tabela para ver os boletos salvos em memória.
-4. Valide a saúde da aplicação em `http://localhost:8080/health`.
-5. O Maven Wrapper fará o download automático do `maven-wrapper.jar` se não existir, evitando a necessidade de versionar binários.
+2. Acesse `http://localhost:8080/health` para validar se o backend está respondendo.
+3. Utilize o endpoint como base para conectar futuras páginas ou integrações.
+4. O Maven Wrapper fará o download automático do `maven-wrapper.jar` se não existir, evitando a necessidade de versionar binários.
