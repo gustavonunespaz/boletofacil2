@@ -171,13 +171,17 @@ public class PdfBoxPdfService implements PdfService {
         }
     }
 
-    private void limparAreaDeEndereco(PDDocument document, PDPage page) throws IOException {
-        BoundingBox areaAlvo = ENDERECO_BOUNDING_BOX.ajustarParaRotacao(page.getRotation(), page.getMediaBox());
-        try (PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
-            contentStream.setStrokingColor(Color.WHITE);
-            contentStream.setNonStrokingColor(Color.WHITE);
-            contentStream.addRect(areaAlvo.x0, areaAlvo.y0, areaAlvo.largura(), areaAlvo.altura());
-            contentStream.fill();
+    private void limparAreaDeEndereco(PDDocument document) throws IOException {
+        for (PDPage page : document.getPages()) {
+            BoundingBox areaAlvo = ENDERECO_BOUNDING_BOX;
+            try (PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
+                areaAlvo = areaAlvo.ajustarParaRotacao(page.getRotation(), page.getMediaBox());
+
+                contentStream.setStrokingColor(Color.WHITE);
+                contentStream.setNonStrokingColor(Color.WHITE);
+                contentStream.addRect(areaAlvo.x0, areaAlvo.y0, areaAlvo.largura(), areaAlvo.altura());
+                contentStream.fill();
+            }
         }
     }
 
