@@ -3,10 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boleto Fácil</title>
+    <title>Boleto Fácil 2</title>
     <link rel="stylesheet" href="landing.css">
 </head>
 <body>
-    <h1>Página de boleto Fácil</h1>
+    <header>
+        <h1>Boleto Fácil 2</h1>
+        <p>Reescrita em Java com arquitetura limpa para automatizar boletos, lotes de envio e geração de artefatos.</p>
+    </header>
+
+    <main class="container">
+        <section class="card">
+            <h2>Objetivos do MVP</h2>
+            <div class="grid">
+                <div>
+                    <span class="tag">Processar boletos</span>
+                    <ul>
+                        <li>Extrair dados do PDF (cliente, endereço, parcela, vencimento).</li>
+                        <li>Gerar PDF final organizado por ano/mês.</li>
+                    </ul>
+                </div>
+                <div>
+                    <span class="tag">Gerar lote Correios</span>
+                    <ul>
+                        <li>PDF compilado com boletos selecionados.</li>
+                        <li>Exportar TXT e Excel com dados de clientes.</li>
+                    </ul>
+                </div>
+                <div>
+                    <span class="tag">Ajustar endereços</span>
+                    <ul>
+                        <li>Atualizar endereço normalizado do boleto.</li>
+                        <li>Regerar PDF processado após a correção.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Arquitetura (Clean/Hexagonal)</h2>
+            <ul>
+                <li>Camada de domínio independente de frameworks, aplicando SOLID e valor-objects.</li>
+                <li>Casos de uso orquestram fluxos e dependem de ports (interfaces).</li>
+                <li>Adapters de infraestrutura (PDFBox, POI, JPA) implementam as ports.</li>
+                <li>Interfaces REST ou CLI acessam os casos de uso.</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>Pilha tecnológica</h2>
+            <div class="grid">
+                <div>
+                    <span class="tag">Linguagem</span>
+                    <ul>
+                        <li>Java 17/21, Maven, testes com JUnit 5 e Mockito.</li>
+                    </ul>
+                </div>
+                <div>
+                    <span class="tag">Infra</span>
+                    <ul>
+                        <li>Spring Boot (Web, Data JPA), PostgreSQL e H2 para dev.</li>
+                    </ul>
+                </div>
+                <div>
+                    <span class="tag">Arquivos</span>
+                    <ul>
+                        <li>Apache PDFBox para PDF e Apache POI para Excel.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <p class="footer-note">Documentação completa em <strong>ARCHITECTURE.md</strong>. Princípios ACID e Código Limpo guiando a evolução.</p>
+    </main>
 </body>
 </html>
