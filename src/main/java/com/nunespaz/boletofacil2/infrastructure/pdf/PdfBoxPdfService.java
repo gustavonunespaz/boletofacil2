@@ -23,6 +23,7 @@ import java.util.Locale;
 public class PdfBoxPdfService implements PdfService {
 
     private static final Locale LOCALE_PT_BR = new Locale("pt", "BR");
+    private static final BoundingBox ENDERECO_BOUNDING_BOX = new BoundingBox(30f, 750f, 550f, 810f);
 
     @Override
     public PdfExtractionData extrairDados(String caminhoPdf) {
@@ -171,21 +172,13 @@ public class PdfBoxPdfService implements PdfService {
 
     private void limparAreaDeEndereco(PDDocument document) throws IOException {
         for (PDPage page : document.getPages()) {
+            BoundingBox areaAlvo = ENDERECO_BOUNDING_BOX;
             try (PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
-                float largura = 520;
-                float altura = 60;
-                float x = 30;
-                float y = 750;
-
-                if (page.getRotation() == 180) {
-                    PDRectangle mediaBox = page.getMediaBox();
-                    x = mediaBox.getWidth() - x - largura;
-                    y = mediaBox.getHeight() - y - altura;
-                }
+                areaAlvo = areaAlvo.ajustarParaRotacao(page.getRotation(), page.getMediaBox());
 
                 contentStream.setStrokingColor(1, 1, 1);
                 contentStream.setNonStrokingColor(1, 1, 1);
-                contentStream.addRect(x, y, largura, altura);
+                contentStream.addRect(areaAlvo.x0, areaAlvo.y0, areaAlvo.largura(), areaAlvo.altura());
                 contentStream.fill();
             }
         }
@@ -226,5 +219,22 @@ public class PdfBoxPdfService implements PdfService {
             return "";
         }
         return texto.substring(0, 1).toUpperCase(LOCALE_PT_BR) + texto.substring(1);
+    }
+
+    private record BoundingBox(float x0, float y0, float x1, float y1) {
+        BoundingBox ajustarParaRotacao(int rotacao, PDRectangle mediaBox) {
+            if (rotacao == 180) {
+                return new BoundingBox(mediaBox.getWidth() - x1, mediaBox.getHeight() - y1, mediaBox.getWidth() - x0, mediaBox.getHeight() - y0);
+            }
+            return this;
+        }
+
+        float largura() {
+            return x1 - x0;
+        }
+
+        float altura() {
+            return y1 - y0;
+        }
     }
 }
