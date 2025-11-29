@@ -22,6 +22,7 @@
         td { color: #e5e7eb; font-size: 14px; }
         .muted { color: #9ca3af; font-size: 14px; }
         .error { color: #f87171; margin-top: 8px; }
+        select { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #1f2937; background: #0b1220; color: #e2e8f0; }
     </style>
 </head>
 <body>
@@ -65,6 +66,22 @@
             </div>
             <button id="recarregarBtn" style="background:#2563eb; color:#e5e7eb; box-shadow:0 10px 30px rgba(37,99,235,0.25);">Recarregar lista</button>
         </div>
+        <div class="grid" style="margin-top:12px;">
+            <div>
+                <label for="filtroCliente">Filtrar por cliente</label>
+                <input type="text" id="filtroCliente" placeholder="Digite o nome do cliente" />
+            </div>
+            <div>
+                <label for="filtroStatus">Status</label>
+                <select id="filtroStatus">
+                    <option value="TODOS">Todos</option>
+                    <option value="NOVO">Novo</option>
+                    <option value="PROCESSADO">Processado</option>
+                    <option value="ENVIADO">Enviado</option>
+                    <option value="CANCELADO">Cancelado</option>
+                </select>
+            </div>
+        </div>
         <div id="lista-wrapper"></div>
     </section>
 </div>
@@ -77,6 +94,9 @@
     const recarregarBtn = document.getElementById('recarregarBtn');
     const erroBox = document.getElementById('erro');
     const listaWrapper = document.getElementById('lista-wrapper');
+    const filtroCliente = document.getElementById('filtroCliente');
+    const filtroStatus = document.getElementById('filtroStatus');
+    let boletosCache = [];
 
     async function checarSaude() {
         try {
@@ -180,6 +200,19 @@
         `;
     }
 
+    function aplicarFiltros() {
+        const termoCliente = (filtroCliente.value || '').trim().toLowerCase();
+        const statusSelecionado = filtroStatus.value;
+
+        const filtrados = boletosCache.filter((boleto) => {
+            const coincideCliente = !termoCliente || boleto.cliente.toLowerCase().includes(termoCliente);
+            const coincideStatus = statusSelecionado === 'TODOS' || boleto.status === statusSelecionado;
+            return coincideCliente && coincideStatus;
+        });
+
+        renderTabela(filtrados);
+    }
+
     async function carregarBoletos() {
         try {
             const resp = await fetch('/api/boletos');
@@ -187,7 +220,8 @@
                 throw new Error('Não foi possível carregar a lista');
             }
             const dados = await resp.json();
-            renderTabela(dados);
+            boletosCache = [...dados].sort((a, b) => a.cliente.localeCompare(b.cliente, 'pt-BR', { sensitivity: 'base' }));
+            aplicarFiltros();
         } catch (e) {
             listaWrapper.innerHTML = `<p class="error">${e.message}</p>`;
         }
@@ -198,6 +232,8 @@
     selecaoPdf.addEventListener('change', atualizarCampoCaminho);
     processarBtn.addEventListener('click', processar);
     recarregarBtn.addEventListener('click', carregarBoletos);
+    filtroCliente.addEventListener('input', aplicarFiltros);
+    filtroStatus.addEventListener('change', aplicarFiltros);
 
     checarSaude();
     carregarBoletos();
