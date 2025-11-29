@@ -13,6 +13,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -65,7 +66,7 @@ class BoletoControllerTest {
     private Boleto criarBoleto() {
         Endereco endereco = new Endereco("Rua A", "100", "Casa", "Centro", "00000-000", "Cidade", "ST");
         Cliente cliente = new Cliente("Cliente Teste", endereco);
-        Boleto boleto = new Boleto(UUID.randomUUID(), cliente, "1/1", LocalDate.now(), "/tmp/original.pdf");
+        Boleto boleto = new Boleto(UUID.randomUUID(), cliente, "1/1", LocalDate.now(), new BigDecimal("150.50"), "/tmp/original.pdf");
         boleto.marcarComoProcessado("/tmp/final.pdf");
         return boleto;
     }

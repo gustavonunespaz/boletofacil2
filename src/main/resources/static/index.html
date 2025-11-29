@@ -183,6 +183,7 @@
             <tr>
                 <td>${b.cliente}</td>
                 <td>${b.vendaParcela || '-'}</td>
+                <td>${formatarValor(b.valor)}</td>
                 <td>${b.vencimento}</td>
                 <td>${b.status}</td>
                 <td>${b.pdfProcessado || '-'}</td>
@@ -192,12 +193,23 @@
             <div style="overflow-x:auto;">
             <table>
                 <thead>
-                    <tr><th>Cliente</th><th>Venda/Parcela</th><th>Vencimento</th><th>Status</th><th>PDF Processado</th></tr>
+                    <tr><th>Cliente</th><th>Venda/Parcela</th><th>Valor</th><th>Vencimento</th><th>Status</th><th>PDF Processado</th></tr>
                 </thead>
                 <tbody>${linhas}</tbody>
             </table>
             </div>
         `;
+    }
+
+    function formatarValor(valor) {
+        if (valor === null || valor === undefined) {
+            return '-';
+        }
+        const numero = Number(valor);
+        if (Number.isNaN(numero)) {
+            return '-';
+        }
+        return numero.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     }
 
     function aplicarFiltros() {

@@ -2,6 +2,7 @@ package com.nunespaz.boletofacil2.application.dto;
 
 import com.nunespaz.boletofacil2.domain.entity.Boleto;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -11,6 +12,7 @@ public class BoletoResumoResponse {
     private final String cliente;
     private final String vendaParcela;
     private final LocalDate vencimento;
+    private final BigDecimal valor;
     private final String status;
     private final String pdfProcessado;
 
@@ -19,6 +21,7 @@ public class BoletoResumoResponse {
         this.cliente = boleto.getCliente().getNome();
         this.vendaParcela = boleto.getVendaParcela();
         this.vencimento = boleto.getDataVencimento();
+        this.valor = boleto.getValor();
         this.status = boleto.getStatus().name();
         this.pdfProcessado = boleto.getPdfProcessado();
     }
@@ -37,6 +40,10 @@ public class BoletoResumoResponse {
 
     public LocalDate getVencimento() {
         return vencimento;
+    }
+
+    public BigDecimal getValor() {
+        return valor;
     }
 
     public String getStatus() {
