@@ -14,3 +14,10 @@ Reescrita do Boleto Fácil em Java, priorizando arquitetura limpa, testabilidade
 
 ## Como visualizar
 Abra `landing.html` no navegador para acessar o resumo do projeto. Ajustes visuais podem ser feitos em `landing.css`.
+
+Para executar localmente via navegador com o Maven Wrapper:
+
+1. Na raiz do projeto, rode `./mvnw spring-boot:run`.
+2. Acesse `http://localhost:8080/health` para validar se o backend está respondendo.
+3. Utilize o endpoint como base para conectar futuras páginas ou integrações.
+4. O Maven Wrapper fará o download automático do `maven-wrapper.jar` se não existir, evitando a necessidade de versionar binários.
