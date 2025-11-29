@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boleto Fácil 2 - Console Web</title>
+    <link rel="stylesheet" href="/landing.css">
+    <style>
+        body { background: #0f172a; color: #e2e8f0; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        .page { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+        .card { background: #111827; border: 1px solid #1f2937; border-radius: 16px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.35); }
+        .grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin-top: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; color: #cbd5e1; }
+        input[type="text"] { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #1f2937; background: #0b1220; color: #e2e8f0; }
+        button { background: linear-gradient(135deg, #22c55e, #16a34a); color: #0f172a; border: none; padding: 12px 18px; font-weight: 700; border-radius: 10px; cursor: pointer; box-shadow: 0 10px 30px rgba(34,197,94,0.25); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .status { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: #a5b4fc; }
+        .badge { background: #1d4ed8; color: #e2e8f0; padding: 4px 10px; border-radius: 999px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+        th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #1f2937; }
+        th { color: #9ca3af; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.6px; }
+        td { color: #e5e7eb; font-size: 14px; }
+        .muted { color: #9ca3af; font-size: 14px; }
+        .error { color: #f87171; margin-top: 8px; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <header class="card" style="margin-bottom: 24px;">
+        <div style="display:flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div>
+                <p class="badge">Boleto Fácil 2</p>
+                <h1 style="margin: 8px 0 4px; color: #e5e7eb;">Console local</h1>
+                <p class="muted">Suba com <code>./mvnw spring-boot:run</code> e opere via <code>localhost:8080</code>.</p>
+            </div>
+            <div class="status" id="health-status">
+                <span class="badge" style="background:#0ea5e9;">Verificando</span>
+                <span>Checando serviço...</span>
+            </div>
+        </div>
+    </header>
+
+    <section class="card">
+        <h2 style="margin:0 0 12px; color:#e5e7eb;">Processar boleto (PDF local)</h2>
+        <p class="muted">Informe o caminho absoluto do PDF no seu filesystem. O arquivo será lido, enriquecido com endereço e salvo na pasta sugerida.</p>
+        <div class="grid">
+            <div>
+                <label for="caminhoPdf">Caminho do PDF</label>
+                <input type="text" id="caminhoPdf" placeholder="Ex.: /home/usuario/documentos/boleto.pdf" />
+            </div>
+            <div style="display:flex; align-items:flex-end;">
+                <button id="processarBtn">Processar boleto</button>
+            </div>
+        </div>
+        <div id="erro" class="error" style="display:none;"></div>
+    </section>
+
+    <section class="card" style="margin-top: 20px;">
+        <div style="display:flex; justify-content: space-between; align-items:center; gap:10px; flex-wrap: wrap;">
+            <div>
+                <h2 style="margin:0; color:#e5e7eb;">Boletos processados</h2>
+                <p class="muted">Visualize o histórico em memória da sessão atual.</p>
+            </div>
+            <button id="recarregarBtn" style="background:#2563eb; color:#e5e7eb; box-shadow:0 10px 30px rgba(37,99,235,0.25);">Recarregar lista</button>
+        </div>
+        <div id="lista-wrapper"></div>
+    </section>
+</div>
+
+<script>
+    const healthStatus = document.getElementById('health-status');
+    const processarBtn = document.getElementById('processarBtn');
+    const recarregarBtn = document.getElementById('recarregarBtn');
+    const erroBox = document.getElementById('erro');
+    const listaWrapper = document.getElementById('lista-wrapper');
+
+    async function checarSaude() {
+        try {
+            const resp = await fetch('/health');
+            if (resp.ok) {
+                const texto = await resp.text();
+                healthStatus.innerHTML = `<span class="badge" style="background:#22c55e;">Online</span><span>${texto}</span>`;
+            } else {
+                throw new Error('Serviço indisponível');
+            }
+        } catch (e) {
+            healthStatus.innerHTML = `<span class="badge" style="background:#f97316;">Offline</span><span>${e.message}</span>`;
+        }
+    }
+
+    async function processar() {
+        erroBox.style.display = 'none';
+        const caminhoPdf = document.getElementById('caminhoPdf').value.trim();
+        if (!caminhoPdf) {
+            erroBox.textContent = 'Informe o caminho do PDF.';
+            erroBox.style.display = 'block';
+            return;
+        }
+        processarBtn.disabled = true;
+        try {
+            const resp = await fetch('/api/boletos/processar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ caminhoPdf })
+            });
+            if (!resp.ok) {
+                const mensagem = await resp.text();
+                throw new Error(mensagem || 'Falha ao processar');
+            }
+            await carregarBoletos();
+            document.getElementById('caminhoPdf').value = '';
+        } catch (e) {
+            erroBox.textContent = e.message;
+            erroBox.style.display = 'block';
+        } finally {
+            processarBtn.disabled = false;
+        }
+    }
+
+    function renderTabela(boletos) {
+        if (!boletos.length) {
+            listaWrapper.innerHTML = '<p class="muted">Nenhum boleto processado nesta sessão.</p>';
+            return;
+        }
+        const linhas = boletos.map(b => `
+            <tr>
+                <td>${b.cliente}</td>
+                <td>${b.vendaParcela || '-'}</td>
+                <td>${b.vencimento}</td>
+                <td>${b.status}</td>
+                <td>${b.pdfProcessado || '-'}</td>
+            </tr>
+        `).join('');
+        listaWrapper.innerHTML = `
+            <div style="overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr><th>Cliente</th><th>Venda/Parcela</th><th>Vencimento</th><th>Status</th><th>PDF Processado</th></tr>
+                </thead>
+                <tbody>${linhas}</tbody>
+            </table>
+            </div>
+        `;
+    }
+
+    async function carregarBoletos() {
+        try {
+            const resp = await fetch('/api/boletos');
+            if (!resp.ok) {
+                throw new Error('Não foi possível carregar a lista');
+            }
+            const dados = await resp.json();
+            renderTabela(dados);
+        } catch (e) {
+            listaWrapper.innerHTML = `<p class="error">${e.message}</p>`;
+        }
+    }
+
+    processarBtn.addEventListener('click', processar);
+    recarregarBtn.addEventListener('click', carregarBoletos);
+
+    checarSaude();
+    carregarBoletos();
+</script>
+</body>
+</html>
