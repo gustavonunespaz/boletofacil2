@@ -172,8 +172,20 @@ public class PdfBoxPdfService implements PdfService {
     private void limparAreaDeEndereco(PDDocument document) throws IOException {
         for (PDPage page : document.getPages()) {
             try (PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
+                float largura = 520;
+                float altura = 60;
+                float x = 30;
+                float y = 750;
+
+                if (page.getRotation() == 180) {
+                    PDRectangle mediaBox = page.getMediaBox();
+                    x = mediaBox.getWidth() - x - largura;
+                    y = mediaBox.getHeight() - y - altura;
+                }
+
+                contentStream.setStrokingColor(1, 1, 1);
                 contentStream.setNonStrokingColor(1, 1, 1);
-                contentStream.addRect(30, 750, 520, 60);
+                contentStream.addRect(x, y, largura, altura);
                 contentStream.fill();
             }
         }
