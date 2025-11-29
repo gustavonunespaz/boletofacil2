@@ -4,6 +4,7 @@ import com.nunespaz.boletofacil2.application.dto.PdfExtractionData;
 import com.nunespaz.boletofacil2.application.dto.PdfGenerationRequest;
 import com.nunespaz.boletofacil2.application.port.PdfService;
 import com.nunespaz.boletofacil2.domain.valueobject.Endereco;
+import java.awt.Color;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -134,14 +135,14 @@ public class PdfBoxPdfService implements PdfService {
         try (PDDocument document = new PDDocument();
              PDDocument original = PDDocument.load(new File(request.getCaminhoOriginal()))) {
 
-            limparAreaDeEndereco(original);
+            PDPage primeiraPagina = original.getPage(0);
+            primeiraPagina.setRotation(180);
+            limparAreaDeEndereco(original, primeiraPagina);
 
             PDPage paginaEndereco = new PDPage(PDRectangle.A4);
             document.addPage(paginaEndereco);
             escreverEnderecoNaPagina(request, document, paginaEndereco);
 
-            PDPage primeiraPagina = original.getPage(0);
-            primeiraPagina.setRotation(180);
             document.importPage(primeiraPagina);
 
             document.save(destino);
@@ -170,17 +171,13 @@ public class PdfBoxPdfService implements PdfService {
         }
     }
 
-    private void limparAreaDeEndereco(PDDocument document) throws IOException {
-        for (PDPage page : document.getPages()) {
-            BoundingBox areaAlvo = ENDERECO_BOUNDING_BOX;
-            try (PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
-                areaAlvo = areaAlvo.ajustarParaRotacao(page.getRotation(), page.getMediaBox());
-
-                contentStream.setStrokingColor(1, 1, 1);
-                contentStream.setNonStrokingColor(1, 1, 1);
-                contentStream.addRect(areaAlvo.x0, areaAlvo.y0, areaAlvo.largura(), areaAlvo.altura());
-                contentStream.fill();
-            }
+    private void limparAreaDeEndereco(PDDocument document, PDPage page) throws IOException {
+        BoundingBox areaAlvo = ENDERECO_BOUNDING_BOX.ajustarParaRotacao(page.getRotation(), page.getMediaBox());
+        try (PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
+            contentStream.setStrokingColor(Color.WHITE);
+            contentStream.setNonStrokingColor(Color.WHITE);
+            contentStream.addRect(areaAlvo.x0, areaAlvo.y0, areaAlvo.largura(), areaAlvo.altura());
+            contentStream.fill();
         }
     }
 

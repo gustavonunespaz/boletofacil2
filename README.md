@@ -12,6 +12,10 @@ Reescrita do Boleto Fácil em Java, priorizando arquitetura limpa, testabilidade
 - Integrar serviços reais de PDF e persistência seguindo as interfaces já criadas.
 - Configurar pipeline de testes automatizados (JUnit/Mockito) antes de evoluir para Spring Boot.
 
+## Registro de alterações
+- Corrigido o preenchimento da área de endereço nos PDFs gerados para usar cor branca, evitando a aparição de retângulos pretos sobre o conteúdo original.
+- Ajustado o cálculo da limpeza do endereço para respeitar a rotação final da página e limitar a remoção apenas à área alvo, evitando retângulos fora da região configurada.
+
 ## Como visualizar
 Abra `landing.html` no navegador para acessar o resumo do projeto. Ajustes visuais podem ser feitos em `landing.css`.
 
