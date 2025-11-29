@@ -15,6 +15,7 @@ Reescrita do Boleto Fácil em Java, priorizando arquitetura limpa, testabilidade
 ## Registro de alterações
 - Corrigido o preenchimento da área de endereço nos PDFs gerados para usar cor branca, evitando a aparição de retângulos pretos sobre o conteúdo original.
 - Inclusão do valor do boleto na extração e exibição do console web, permitindo visualizar montante e vencimento na lista de boletos processados.
+- Ajustada a heurística de leitura de valor para priorizar montantes mais próximos ao campo "Nosso número", reduzindo falhas de captura em PDFs com múltiplos valores.
 
 ## Como visualizar
 Abra `landing.html` no navegador para acessar o resumo do projeto. Ajustes visuais podem ser feitos em `landing.css`.
