@@ -35,7 +35,7 @@ class ProcessarBoletoPdfUseCaseTest {
     @Test
     void deveProcessarBoletoEAtualizarStatus() {
         Endereco endereco = new Endereco("Rua A", "10", "", "Centro", "12345-000", "Cidade", "ST");
-        PdfExtractionData extracao = new PdfExtractionData("Cliente Teste", endereco, "Venda 1/2", LocalDate.of(2024, 2, 1));
+        PdfExtractionData extracao = new PdfExtractionData("Cliente Teste", endereco, "Venda 1/2", LocalDate.of(2024, 2, 1), endereco.formatadoEmLinhas());
 
         when(pdfService.extrairDados("/tmp/original.pdf")).thenReturn(extracao);
         when(pdfService.gerarPdfFinal(any(PdfGenerationRequest.class))).thenReturn("Documentos/Boletos/2024/Fevereiro/Cliente Teste - 01-02-2024.pdf");

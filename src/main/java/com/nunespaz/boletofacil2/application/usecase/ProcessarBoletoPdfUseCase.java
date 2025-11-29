@@ -39,7 +39,7 @@ public class ProcessarBoletoPdfUseCase {
         PdfGenerationRequest request = new PdfGenerationRequest(
                 caminhoPdf,
                 dadosExtraidos.getNomeCliente(),
-                dadosExtraidos.getEndereco().formatadoEmLinhas(),
+                dadosExtraidos.getEnderecoFormatadoOriginal(),
                 dadosExtraidos.getVendaParcela(),
                 dadosExtraidos.getDataVencimento()
         );
