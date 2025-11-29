@@ -37,23 +37,6 @@ class PdfBoxPdfServiceTest {
         }
     }
 
-    @Test
-    void deveLocalizarValorAbaixoDoNossoNumeroQuandoForMaisProximo() throws Exception {
-        Path pdfTemporario = Files.createTempFile("boleto-contexto-abaixo-", ".pdf");
-        try {
-            criarPdfComValorAbaixoDoNossoNumero(pdfTemporario);
-
-            PdfExtractionData dados = pdfService.extrairDados(pdfTemporario.toString());
-
-            assertNotNull(dados);
-            assertEquals(new BigDecimal("87.45"), dados.getValorBoleto());
-            assertEquals("Cliente Exemplo", dados.getNomeCliente());
-            assertEquals(LocalDate.of(2025, 12, 18), dados.getDataVencimento());
-        } finally {
-            Files.deleteIfExists(pdfTemporario);
-        }
-    }
-
     private void criarPdfDeTeste(Path destino) throws IOException {
         List<String> linhas = List.of(
                 "Resumo de multa R$ 10,00",
@@ -67,43 +50,6 @@ class PdfBoxPdfServiceTest {
                 "R$ 139,02",
                 "Nosso número",
                 "11509252334572"
-        );
-
-        try (PDDocument document = new PDDocument()) {
-            PDPage page = new PDPage();
-            document.addPage(page);
-
-            try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
-                contentStream.beginText();
-                contentStream.setFont(PDType1Font.HELVETICA, 12);
-                contentStream.setLeading(16);
-                contentStream.newLineAtOffset(50, 700);
-
-                for (String linha : linhas) {
-                    contentStream.showText(linha);
-                    contentStream.newLine();
-                }
-
-                contentStream.endText();
-            }
-
-            document.save(destino.toFile());
-        }
-    }
-
-    private void criarPdfComValorAbaixoDoNossoNumero(Path destino) throws IOException {
-        List<String> linhas = List.of(
-                "Sacado/Cliente",
-                "Cliente Exemplo",
-                "Rua Teste, 100 - Bairro Centro",
-                "Instruções",
-                "Venda 1/1",
-                "Vencimento",
-                "18/12/2025",
-                "Nosso número",
-                "11509252334572",
-                "Valor total R$ 87,45",
-                "Multa adicional R$ 10,00"
         );
 
         try (PDDocument document = new PDDocument()) {

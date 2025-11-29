@@ -109,35 +109,21 @@ public class PdfBoxPdfService implements PdfService {
     }
 
     private BigDecimal extrairValorProximoAoNossoNumero(List<String> linhas) {
-        BigDecimal melhorValor = null;
-        int menorDistancia = Integer.MAX_VALUE;
-        int alcanceBusca = 6;
-
         for (int i = 0; i < linhas.size(); i++) {
             String linhaAtual = linhas.get(i).toLowerCase(LOCALE_PT_BR);
             if (linhaAtual.contains("nosso número") || linhaAtual.contains("nosso numero")) {
-                for (int deslocamento = 1; deslocamento <= alcanceBusca; deslocamento++) {
+                for (int deslocamento = 1; deslocamento <= 3; deslocamento++) {
                     int indiceAnterior = i - deslocamento;
                     if (indiceAnterior >= 0) {
-                        BigDecimal valorAcima = extrairValorMonetario(linhas.get(indiceAnterior));
-                        if (valorAcima != null && deslocamento < menorDistancia) {
-                            melhorValor = valorAcima;
-                            menorDistancia = deslocamento;
-                        }
-                    }
-
-                    int indicePosterior = i + deslocamento;
-                    if (indicePosterior < linhas.size()) {
-                        BigDecimal valorAbaixo = extrairValorMonetario(linhas.get(indicePosterior));
-                        if (valorAbaixo != null && deslocamento < menorDistancia) {
-                            melhorValor = valorAbaixo;
-                            menorDistancia = deslocamento;
+                        BigDecimal valor = extrairValorMonetario(linhas.get(indiceAnterior));
+                        if (valor != null) {
+                            return valor;
                         }
                     }
                 }
             }
         }
-        return melhorValor;
+        return null;
     }
 
     private BigDecimal extrairValorMonetario(String origem) {
