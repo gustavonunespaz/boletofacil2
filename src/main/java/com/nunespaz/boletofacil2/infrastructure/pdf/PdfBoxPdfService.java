@@ -74,10 +74,6 @@ public class PdfBoxPdfService implements PdfService {
                     String dataTexto = linhas.get(i + 1).replaceAll("[^0-9/]", "").trim();
                     vencimento = parseData(dataTexto);
                 }
-
-                if (valor == null) {
-                    valor = extrairValorMonetario(linhaAtual);
-                }
             }
 
             if (nomeCliente == null || enderecoCliente == null || vencimento == null) {
@@ -85,7 +81,7 @@ public class PdfBoxPdfService implements PdfService {
             }
 
             if (valor == null) {
-                valor = extrairValorMonetario(texto);
+                valor = extrairValorBoleto(linhas, texto);
             }
 
             Endereco endereco = criarEnderecoAPartirDaLinha(enderecoCliente);
@@ -94,6 +90,54 @@ public class PdfBoxPdfService implements PdfService {
         } catch (IOException e) {
             throw new IllegalStateException("Erro ao ler PDF", e);
         }
+    }
+
+    private BigDecimal extrairValorBoleto(List<String> linhas, String textoCompleto) {
+        BigDecimal valorProximoAoNossoNumero = extrairValorProximoAoNossoNumero(linhas);
+        if (valorProximoAoNossoNumero != null) {
+            return valorProximoAoNossoNumero;
+        }
+
+        for (String linha : linhas) {
+            BigDecimal valorLinha = extrairValorMonetario(linha);
+            if (valorLinha != null) {
+                return valorLinha;
+            }
+        }
+
+        return extrairValorMonetario(textoCompleto);
+    }
+
+    private BigDecimal extrairValorProximoAoNossoNumero(List<String> linhas) {
+        BigDecimal melhorValor = null;
+        int menorDistancia = Integer.MAX_VALUE;
+        int alcanceBusca = 6;
+
+        for (int i = 0; i < linhas.size(); i++) {
+            String linhaAtual = linhas.get(i).toLowerCase(LOCALE_PT_BR);
+            if (linhaAtual.contains("nosso número") || linhaAtual.contains("nosso numero")) {
+                for (int deslocamento = 1; deslocamento <= alcanceBusca; deslocamento++) {
+                    int indiceAnterior = i - deslocamento;
+                    if (indiceAnterior >= 0) {
+                        BigDecimal valorAcima = extrairValorMonetario(linhas.get(indiceAnterior));
+                        if (valorAcima != null && deslocamento < menorDistancia) {
+                            melhorValor = valorAcima;
+                            menorDistancia = deslocamento;
+                        }
+                    }
+
+                    int indicePosterior = i + deslocamento;
+                    if (indicePosterior < linhas.size()) {
+                        BigDecimal valorAbaixo = extrairValorMonetario(linhas.get(indicePosterior));
+                        if (valorAbaixo != null && deslocamento < menorDistancia) {
+                            melhorValor = valorAbaixo;
+                            menorDistancia = deslocamento;
+                        }
+                    }
+                }
+            }
+        }
+        return melhorValor;
     }
 
     private BigDecimal extrairValorMonetario(String origem) {
