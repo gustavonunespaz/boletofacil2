@@ -19,5 +19,6 @@ Para executar localmente via navegador com o Maven Wrapper:
 
 1. Na raiz do projeto, rode `./mvnw spring-boot:run`.
 2. Acesse `http://localhost:8080/health` para validar se o backend está respondendo.
-3. Utilize o endpoint como base para conectar futuras páginas ou integrações.
-4. O Maven Wrapper fará o download automático do `maven-wrapper.jar` se não existir, evitando a necessidade de versionar binários.
+3. Utilize o console web em `http://localhost:8080/` para selecionar um ou vários PDFs locais (via diálogo do navegador) e processá-los de uma só vez.
+4. Utilize o endpoint como base para conectar futuras páginas ou integrações.
+5. O Maven Wrapper fará o download automático do `maven-wrapper.jar` se não existir, evitando a necessidade de versionar binários.

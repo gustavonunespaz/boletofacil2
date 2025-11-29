@@ -46,9 +46,11 @@
         <div class="grid">
             <div>
                 <label for="caminhoPdf">Caminho do PDF</label>
-                <input type="text" id="caminhoPdf" placeholder="Ex.: /home/usuario/documentos/boleto.pdf" />
+                <input type="text" id="caminhoPdf" placeholder="Clique para selecionar um ou mais PDFs" readonly />
+                <input type="file" id="selecaoPdf" accept="application/pdf" multiple style="display:none;" />
             </div>
-            <div style="display:flex; align-items:flex-end;">
+            <div style="display:flex; align-items:flex-end; gap: 10px; flex-wrap: wrap;">
+                <button id="selecionarBtn" type="button" style="background:#334155; color:#e2e8f0; box-shadow:none;">Selecionar PDFs</button>
                 <button id="processarBtn">Processar boleto</button>
             </div>
         </div>
@@ -70,6 +72,8 @@
 <script>
     const healthStatus = document.getElementById('health-status');
     const processarBtn = document.getElementById('processarBtn');
+    const selecionarBtn = document.getElementById('selecionarBtn');
+    const selecaoPdf = document.getElementById('selecaoPdf');
     const recarregarBtn = document.getElementById('recarregarBtn');
     const erroBox = document.getElementById('erro');
     const listaWrapper = document.getElementById('lista-wrapper');
@@ -91,30 +95,63 @@
     async function processar() {
         erroBox.style.display = 'none';
         const caminhoPdf = document.getElementById('caminhoPdf').value.trim();
-        if (!caminhoPdf) {
-            erroBox.textContent = 'Informe o caminho do PDF.';
+        const arquivosSelecionados = Array.from(selecaoPdf.files || []);
+
+        if (!arquivosSelecionados.length && !caminhoPdf) {
+            erroBox.textContent = 'Informe o caminho do PDF ou selecione arquivos.';
             erroBox.style.display = 'block';
             return;
         }
+
         processarBtn.disabled = true;
+        selecionarBtn.disabled = true;
         try {
-            const resp = await fetch('/api/boletos/processar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ caminhoPdf })
-            });
-            if (!resp.ok) {
-                const mensagem = await resp.text();
-                throw new Error(mensagem || 'Falha ao processar');
+            if (arquivosSelecionados.length) {
+                const formData = new FormData();
+                arquivosSelecionados.forEach((arquivo) => formData.append('arquivos', arquivo));
+
+                const respostaUpload = await fetch('/api/boletos/processar-upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!respostaUpload.ok) {
+                    const mensagem = await respostaUpload.text();
+                    throw new Error(mensagem || 'Falha ao processar PDFs selecionados');
+                }
+            } else {
+                const resp = await fetch('/api/boletos/processar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ caminhoPdf })
+                });
+                if (!resp.ok) {
+                    const mensagem = await resp.text();
+                    throw new Error(mensagem || 'Falha ao processar');
+                }
             }
+
             await carregarBoletos();
             document.getElementById('caminhoPdf').value = '';
+            selecaoPdf.value = '';
         } catch (e) {
             erroBox.textContent = e.message;
             erroBox.style.display = 'block';
         } finally {
             processarBtn.disabled = false;
+            selecionarBtn.disabled = false;
         }
+    }
+
+    function atualizarCampoCaminho() {
+        const arquivosSelecionados = Array.from(selecaoPdf.files || []);
+        if (!arquivosSelecionados.length) {
+            document.getElementById('caminhoPdf').value = '';
+            return;
+        }
+
+        const nomes = arquivosSelecionados.map((arquivo) => arquivo.name).join(', ');
+        document.getElementById('caminhoPdf').value = nomes;
     }
 
     function renderTabela(boletos) {
@@ -156,6 +193,9 @@
         }
     }
 
+    selecionarBtn.addEventListener('click', () => selecaoPdf.click());
+    document.getElementById('caminhoPdf').addEventListener('click', () => selecaoPdf.click());
+    selecaoPdf.addEventListener('change', atualizarCampoCaminho);
     processarBtn.addEventListener('click', processar);
     recarregarBtn.addEventListener('click', carregarBoletos);
 

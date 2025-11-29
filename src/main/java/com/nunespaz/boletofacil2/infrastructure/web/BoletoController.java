@@ -6,12 +6,19 @@ import com.nunespaz.boletofacil2.application.dto.ProcessarBoletoResponse;
 import com.nunespaz.boletofacil2.application.usecase.ListarBoletosUseCase;
 import com.nunespaz.boletofacil2.application.usecase.ProcessarBoletoPdfUseCase;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -34,6 +41,45 @@ public class BoletoController {
 
         ProcessarBoletoResponse response = processarBoletoPdfUseCase.executar(request.getCaminhoPdf());
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping(value = "/processar-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<List<ProcessarBoletoResponse>> processarUpload(@RequestParam("arquivos") MultipartFile[] arquivos) {
+        if (arquivos == null || arquivos.length == 0) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<ProcessarBoletoResponse> respostas = new ArrayList<>();
+
+        for (MultipartFile arquivo : arquivos) {
+            if (arquivo == null || arquivo.isEmpty()) {
+                continue;
+            }
+
+            Path destinoTemporario = null;
+            try {
+                destinoTemporario = Files.createTempFile("boleto-upload-", ".pdf");
+                arquivo.transferTo(destinoTemporario.toFile());
+                ProcessarBoletoResponse resposta = processarBoletoPdfUseCase.executar(destinoTemporario.toString());
+                respostas.add(resposta);
+            } catch (IOException e) {
+                throw new IllegalStateException("Falha ao armazenar o PDF enviado", e);
+            } finally {
+                if (destinoTemporario != null) {
+                    try {
+                        Files.deleteIfExists(destinoTemporario);
+                    } catch (IOException ignored) {
+                        // Arquivo temporário pode ser removido manualmente posteriormente
+                    }
+                }
+            }
+        }
+
+        if (respostas.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        return ResponseEntity.ok(respostas);
     }
 
     @GetMapping
