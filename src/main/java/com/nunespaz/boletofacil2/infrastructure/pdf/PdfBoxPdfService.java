@@ -135,14 +135,14 @@ public class PdfBoxPdfService implements PdfService {
         try (PDDocument document = new PDDocument();
              PDDocument original = PDDocument.load(new File(request.getCaminhoOriginal()))) {
 
-            limparAreaDeEndereco(original);
+            PDPage primeiraPagina = original.getPage(0);
+            primeiraPagina.setRotation(180);
+            limparAreaDeEndereco(original, primeiraPagina);
 
             PDPage paginaEndereco = new PDPage(PDRectangle.A4);
             document.addPage(paginaEndereco);
             escreverEnderecoNaPagina(request, document, paginaEndereco);
 
-            PDPage primeiraPagina = original.getPage(0);
-            primeiraPagina.setRotation(180);
             document.importPage(primeiraPagina);
 
             document.save(destino);
