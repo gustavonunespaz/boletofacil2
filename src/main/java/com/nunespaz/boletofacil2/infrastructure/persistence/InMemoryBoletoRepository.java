@@ -19,7 +19,7 @@ public class InMemoryBoletoRepository implements BoletoRepository {
     }
 
     @Override
-    public Map<UUID, Boleto> findAll() {
-        return Collections.unmodifiableMap(storage);
+    public Iterable<Boleto> findAll() {
+        return Collections.unmodifiableCollection(storage.values());
     }
 }
