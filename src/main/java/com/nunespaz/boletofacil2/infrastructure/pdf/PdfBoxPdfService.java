@@ -4,7 +4,6 @@ import com.nunespaz.boletofacil2.application.dto.PdfExtractionData;
 import com.nunespaz.boletofacil2.application.dto.PdfGenerationRequest;
 import com.nunespaz.boletofacil2.application.port.PdfService;
 import com.nunespaz.boletofacil2.domain.valueobject.Endereco;
-import org.apache.pdfbox.multipdf.PDFMergerUtility;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -31,41 +30,55 @@ public class PdfBoxPdfService implements PdfService {
             PDFTextStripper stripper = new PDFTextStripper();
             stripper.setEndPage(1);
             String texto = stripper.getText(document);
-            List<String> linhas = Arrays.stream(texto.split("\r?\n"))
-                    .map(String::trim)
-                    .filter(s -> !s.isBlank())
-                    .toList();
 
-            String nome = buscarDepoisDe(linhas, "Sacado/Cliente");
-            String enderecoLinha = normalizarEndereco(buscarDepoisDe(linhas, nome));
-            String vendaParcela = buscarDepoisDe(linhas, "Instruções");
-            LocalDate vencimento = parseData(buscarDepoisDe(linhas, "Vencimento"));
-
-            if (nome == null || enderecoLinha == null || vencimento == null) {
+            if (texto == null || texto.isBlank()) {
                 return null;
             }
 
-            Endereco endereco = criarEnderecoAPartirDaLinha(enderecoLinha);
-            return new PdfExtractionData(nome, endereco, vendaParcela, vencimento);
+            List<String> linhas = Arrays.asList(texto.split("\r?\n"));
+
+            String nomeCliente = null;
+            String enderecoCliente = null;
+            String vendaParcela = null;
+            LocalDate vencimento = null;
+
+            for (int i = 0; i < linhas.size(); i++) {
+                String linhaAtual = linhas.get(i).trim();
+
+                if (linhaAtual.contains("Sacado/Cliente")) {
+                    if (i + 1 < linhas.size()) {
+                        String possivelNome = linhas.get(i + 1).trim();
+                        nomeCliente = possivelNome.replaceAll("R\\$\\s*\\d+([.,]\\d{2})?", "").trim();
+                    }
+                    if (i + 2 < linhas.size()) {
+                        String enderecoLinha = linhas.get(i + 2).trim();
+                        if (enderecoLinha.endsWith("-") && i + 3 < linhas.size()) {
+                            enderecoLinha = enderecoLinha.substring(0, enderecoLinha.length() - 1).trim() + " " + linhas.get(i + 3).trim();
+                        }
+                        enderecoCliente = enderecoLinha;
+                    }
+                }
+
+                if (linhaAtual.contains("Instruções") && i + 1 < linhas.size()) {
+                    vendaParcela = linhas.get(i + 1).trim();
+                }
+
+                if (linhaAtual.contains("Vencimento") && i + 1 < linhas.size()) {
+                    String dataTexto = linhas.get(i + 1).replaceAll("[^0-9/]", "").trim();
+                    vencimento = parseData(dataTexto);
+                }
+            }
+
+            if (nomeCliente == null || enderecoCliente == null || vencimento == null) {
+                return null;
+            }
+
+            Endereco endereco = criarEnderecoAPartirDaLinha(enderecoCliente);
+            String enderecoFormatadoOriginal = formatarEnderecoParaPdf(enderecoCliente);
+            return new PdfExtractionData(nomeCliente, endereco, vendaParcela, vencimento, enderecoFormatadoOriginal);
         } catch (IOException e) {
             throw new IllegalStateException("Erro ao ler PDF", e);
         }
-    }
-
-    private String buscarDepoisDe(List<String> linhas, String marcador) {
-        for (int i = 0; i < linhas.size(); i++) {
-            if (linhas.get(i).contains(marcador) && i + 1 < linhas.size()) {
-                return linhas.get(i + 1);
-            }
-        }
-        return null;
-    }
-
-    private String normalizarEndereco(String linha) {
-        if (linha == null) {
-            return null;
-        }
-        return linha.replaceAll("R\\$\\s*\\d+[.,]\\d{2}?", "").trim();
     }
 
     private LocalDate parseData(String texto) {
@@ -87,8 +100,8 @@ public class PdfBoxPdfService implements PdfService {
         String[] logradouroNumero = primeira.split(",");
         String logradouro = logradouroNumero.length > 0 ? logradouroNumero[0].trim() : primeira;
         String numero = logradouroNumero.length > 1 ? logradouroNumero[1].trim() : "s/n";
-        String bairro = complemento.isEmpty() ? "" : complemento;
-        return new Endereco(logradouro, numero, complemento, bairro.isEmpty() ? "Centro" : bairro, "00000-000", "Cidade", "UF");
+        String bairro = complemento.isEmpty() ? "Centro" : complemento;
+        return new Endereco(logradouro, numero, complemento, bairro, "00000-000", "Cidade", "UF");
     }
 
     @Override
@@ -120,30 +133,80 @@ public class PdfBoxPdfService implements PdfService {
         try (PDDocument document = new PDDocument();
              PDDocument original = PDDocument.load(new File(request.getCaminhoOriginal()))) {
 
+            limparAreaDeEndereco(original);
+
             PDPage paginaEndereco = new PDPage(PDRectangle.A4);
             document.addPage(paginaEndereco);
             escreverEnderecoNaPagina(request, document, paginaEndereco);
 
-            PDFMergerUtility merger = new PDFMergerUtility();
-            merger.appendDocument(document, original);
-            merger.setDestinationFileName(destino);
-            merger.mergeDocuments(null);
+            PDPage primeiraPagina = original.getPage(0);
+            primeiraPagina.setRotation(180);
+            document.importPage(primeiraPagina);
+
+            document.save(destino);
         }
     }
 
     private void escreverEnderecoNaPagina(PdfGenerationRequest request, PDDocument document, PDPage pagina) throws IOException {
         try (PDPageContentStream contentStream = new PDPageContentStream(document, pagina)) {
+            PDType1Font fonte = PDType1Font.HELVETICA;
+            int tamanhoFonte = 10;
+            float xTexto = 25;
+            float yTexto = 450;
+            float larguraMaxima = 510;
+
             contentStream.beginText();
-            contentStream.setFont(PDType1Font.HELVETICA, 10);
-            contentStream.newLineAtOffset(25, 750);
-            contentStream.showText(request.getNomeCliente());
-            contentStream.newLineAtOffset(0, -15);
-            for (String linha : request.getEnderecoFormatado().split("\n")) {
-                contentStream.showText(linha);
+            contentStream.setFont(fonte, tamanhoFonte);
+            contentStream.newLineAtOffset(xTexto, yTexto);
+
+            for (String linha : montarLinhasDeEndereco(request)) {
+                String linhaAjustada = limitarLargura(linha, fonte, tamanhoFonte, larguraMaxima);
+                contentStream.showText(linhaAjustada);
                 contentStream.newLineAtOffset(0, -15);
             }
+
             contentStream.endText();
         }
+    }
+
+    private void limparAreaDeEndereco(PDDocument document) throws IOException {
+        for (PDPage page : document.getPages()) {
+            try (PDPageContentStream contentStream = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
+                contentStream.setNonStrokingColor(1, 1, 1);
+                contentStream.addRect(30, 750, 520, 60);
+                contentStream.fill();
+            }
+        }
+    }
+
+    private List<String> montarLinhasDeEndereco(PdfGenerationRequest request) {
+        String enderecoPreparado = request.getEnderecoFormatado();
+        if (enderecoPreparado.contains("-")) {
+            int indiceSeparador = enderecoPreparado.indexOf('-');
+            String primeiraParte = enderecoPreparado.substring(0, indiceSeparador).trim();
+            String segundaParte = enderecoPreparado.substring(indiceSeparador + 1).trim();
+            enderecoPreparado = primeiraParte + "\n" + segundaParte;
+        }
+        String textoCompleto = request.getNomeCliente() + "\n" + enderecoPreparado;
+        return Arrays.asList(textoCompleto.split("\n"));
+    }
+
+    private String limitarLargura(String linha, PDType1Font fonte, int tamanhoFonte, float larguraMaxima) throws IOException {
+        String texto = linha;
+        while (fonte.getStringWidth(texto) / 1000 * tamanhoFonte > larguraMaxima && !texto.isEmpty()) {
+            texto = texto.substring(0, texto.length() - 1);
+        }
+        return texto;
+    }
+
+    private String formatarEnderecoParaPdf(String enderecoCliente) {
+        if (enderecoCliente.contains("-")) {
+            int indiceSeparador = enderecoCliente.indexOf('-');
+            String primeiraParte = enderecoCliente.substring(0, indiceSeparador).trim();
+            String segundaParte = enderecoCliente.substring(indiceSeparador + 1).trim();
+            return primeiraParte + "\n" + segundaParte;
+        }
+        return enderecoCliente;
     }
 
     private String capitalizar(String texto) {

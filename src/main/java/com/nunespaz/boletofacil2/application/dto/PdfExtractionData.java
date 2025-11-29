@@ -10,8 +10,9 @@ public class PdfExtractionData {
     private final Endereco endereco;
     private final String vendaParcela;
     private final LocalDate dataVencimento;
+    private final String enderecoFormatadoOriginal;
 
-    public PdfExtractionData(String nomeCliente, Endereco endereco, String vendaParcela, LocalDate dataVencimento) {
+    public PdfExtractionData(String nomeCliente, Endereco endereco, String vendaParcela, LocalDate dataVencimento, String enderecoFormatadoOriginal) {
         if (nomeCliente == null || nomeCliente.isBlank()) {
             throw new IllegalArgumentException("Nome do cliente não pode ser vazio");
         }
@@ -19,6 +20,10 @@ public class PdfExtractionData {
         this.endereco = Objects.requireNonNull(endereco, "endereco");
         this.vendaParcela = vendaParcela == null ? "" : vendaParcela;
         this.dataVencimento = Objects.requireNonNull(dataVencimento, "dataVencimento");
+        if (enderecoFormatadoOriginal == null || enderecoFormatadoOriginal.isBlank()) {
+            throw new IllegalArgumentException("Endereço formatado original não pode ser vazio");
+        }
+        this.enderecoFormatadoOriginal = enderecoFormatadoOriginal.trim();
     }
 
     public String getNomeCliente() {
@@ -35,5 +40,9 @@ public class PdfExtractionData {
 
     public LocalDate getDataVencimento() {
         return dataVencimento;
+    }
+
+    public String getEnderecoFormatadoOriginal() {
+        return enderecoFormatadoOriginal;
     }
 }
