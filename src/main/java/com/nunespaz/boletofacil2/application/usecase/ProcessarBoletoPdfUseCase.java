@@ -34,7 +34,14 @@ public class ProcessarBoletoPdfUseCase {
         }
 
         Cliente cliente = new Cliente(dadosExtraidos.getNomeCliente(), dadosExtraidos.getEndereco());
-        Boleto boleto = new Boleto(UUID.randomUUID(), cliente, dadosExtraidos.getVendaParcela(), dadosExtraidos.getDataVencimento(), caminhoPdf);
+        Boleto boleto = new Boleto(
+                UUID.randomUUID(),
+                cliente,
+                dadosExtraidos.getVendaParcela(),
+                dadosExtraidos.getDataVencimento(),
+                dadosExtraidos.getValorBoleto(),
+                caminhoPdf
+        );
 
         PdfGenerationRequest request = new PdfGenerationRequest(
                 caminhoPdf,

@@ -5,6 +5,7 @@ import com.nunespaz.boletofacil2.application.dto.PdfGenerationRequest;
 import com.nunespaz.boletofacil2.application.port.PdfService;
 import com.nunespaz.boletofacil2.domain.valueobject.Endereco;
 import java.awt.Color;
+import java.math.BigDecimal;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -20,11 +21,14 @@ import java.time.format.TextStyle;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PdfBoxPdfService implements PdfService {
 
     private static final Locale LOCALE_PT_BR = new Locale("pt", "BR");
     private static final BoundingBox ENDERECO_BOUNDING_BOX = new BoundingBox(30f, 750f, 550f, 810f);
+    private static final Pattern VALOR_PATTERN = Pattern.compile("R\\$\\s*([0-9.]+,[0-9]{2})");
 
     @Override
     public PdfExtractionData extrairDados(String caminhoPdf) {
@@ -43,6 +47,7 @@ public class PdfBoxPdfService implements PdfService {
             String enderecoCliente = null;
             String vendaParcela = null;
             LocalDate vencimento = null;
+            BigDecimal valor = null;
 
             for (int i = 0; i < linhas.size(); i++) {
                 String linhaAtual = linhas.get(i).trim();
@@ -69,17 +74,42 @@ public class PdfBoxPdfService implements PdfService {
                     String dataTexto = linhas.get(i + 1).replaceAll("[^0-9/]", "").trim();
                     vencimento = parseData(dataTexto);
                 }
+
+                if (valor == null) {
+                    valor = extrairValorMonetario(linhaAtual);
+                }
             }
 
             if (nomeCliente == null || enderecoCliente == null || vencimento == null) {
                 return null;
             }
 
+            if (valor == null) {
+                valor = extrairValorMonetario(texto);
+            }
+
             Endereco endereco = criarEnderecoAPartirDaLinha(enderecoCliente);
             String enderecoFormatadoOriginal = formatarEnderecoParaPdf(enderecoCliente);
-            return new PdfExtractionData(nomeCliente, endereco, vendaParcela, vencimento, enderecoFormatadoOriginal);
+            return new PdfExtractionData(nomeCliente, endereco, vendaParcela, vencimento, valor, enderecoFormatadoOriginal);
         } catch (IOException e) {
             throw new IllegalStateException("Erro ao ler PDF", e);
+        }
+    }
+
+    private BigDecimal extrairValorMonetario(String origem) {
+        if (origem == null || origem.isBlank()) {
+            return null;
+        }
+        Matcher matcher = VALOR_PATTERN.matcher(origem);
+        if (!matcher.find()) {
+            return null;
+        }
+        String valorBruto = matcher.group(1);
+        String normalizado = valorBruto.replace(".", "").replace(",", ".");
+        try {
+            return new BigDecimal(normalizado);
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 

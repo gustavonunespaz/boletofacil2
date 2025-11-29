@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -35,7 +36,7 @@ class ProcessarBoletoPdfUseCaseTest {
     @Test
     void deveProcessarBoletoEAtualizarStatus() {
         Endereco endereco = new Endereco("Rua A", "10", "", "Centro", "12345-000", "Cidade", "ST");
-        PdfExtractionData extracao = new PdfExtractionData("Cliente Teste", endereco, "Venda 1/2", LocalDate.of(2024, 2, 1), endereco.formatadoEmLinhas());
+        PdfExtractionData extracao = new PdfExtractionData("Cliente Teste", endereco, "Venda 1/2", LocalDate.of(2024, 2, 1), new BigDecimal("1200.99"), endereco.formatadoEmLinhas());
 
         when(pdfService.extrairDados("/tmp/original.pdf")).thenReturn(extracao);
         when(pdfService.gerarPdfFinal(any(PdfGenerationRequest.class))).thenReturn("Documentos/Boletos/2024/Fevereiro/Cliente Teste - 01-02-2024.pdf");
